@@ -1,0 +1,38 @@
+[
+ {
+   "operator": "==",
+   "string": "equals"
+ },
+ {
+   "operator": "!=",
+   "string": "doesnotequal"
+ },
+ {
+   "operator": "<",
+   "string": "islessthan"
+ },
+ {
+   "operator": ">",
+   "string": "isgreaterthan"
+ },
+ {
+   "operator": "<=",
+   "string": "islessthanorequal to"
+ },
+ {
+   "operator": ">=",
+   "string": "isgreaterthanorequalto"
+ },
+ {
+   "operator": "in",
+   "string": "isin"
+ },
+ {
+   "operator": "!in",
+   "string": "isnotin"
+ },
+ {
+   "operator": "&&",
+   "string": "and"
+ }
+]

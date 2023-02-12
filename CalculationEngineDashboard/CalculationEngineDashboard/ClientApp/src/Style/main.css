@@ -1,0 +1,15 @@
+﻿t1 {
+    max-width: 75%;
+    max-height: 80%;
+    width: auto;
+    height: auto;
+    float: left;
+}
+
+t2 {
+    max-width: 25%;
+    max-height: 80%;
+    width: auto;
+    height: auto;
+    float: left;
+}

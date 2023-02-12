@@ -1,0 +1,30 @@
+{
+	"name": "calculationengine",
+	"version": "1.0.0",
+	"type": "module",
+	"main": "home.js",
+	"dependencies": {
+		"@babel/runtime": "^7.20.6",
+		"d3": "^5.12.0",
+		"dat.gui": "^0.7.9",
+		"focus-trap-react": "^10.0.2",
+		"install": "^0.13.0",
+		"jquery": "^3.6.1",
+		"jssor-slider": "^28.0.0",
+		"npm": "^8.19.2",
+		"prismjs": "^1.29.0",
+		"react-script-tag": "^1.1.2",
+		"reactjs-popup": "^2.0.5"
+	},
+	"scripts": {
+		"babel-version": "babel --version"
+	},
+	"devDependencies": {
+		"babel-cli": "^6.6.5"
+	},
+	"author": "",
+	"license": "ISC",
+	"keywords": [],
+	"description": "",
+	"browser": "browser.js"
+}

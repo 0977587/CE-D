@@ -1,0 +1,129 @@
+{
+  "rules": [
+    {
+      "name": "rule1",
+      "ruleaction": {
+        "event": "A",
+        "body": "[add, 3]"
+      },
+      "rulecondition": {
+        "name": "greaterthenincl",
+        "body": "20"
+      }
+    }
+  ],
+  "facts": [
+    {
+      "name": "A",
+      "value": 1
+    },
+    {
+      "name": "B",
+      "value": 3
+    },
+    {
+      "name": "C",
+      "value": 5
+    },
+    {
+      "name": "D",
+      "value": 7
+    },
+    {
+      "name": "E",
+      "value": 9
+    },
+    {
+      "name": "F",
+      "value": 11
+    },
+    {
+      "name": "G",
+      "value": 13
+    }
+  ],
+  "nodes": [
+    {
+      "id": 1,
+      "name": "A"
+    },
+    {
+      "id": 2,
+      "name": "B"
+    },
+    {
+      "id": 3,
+      "name": "C"
+    },
+    {
+      "id": 4,
+      "name": "D"
+    },
+    {
+      "id": 5,
+      "name": "E"
+    },
+    {
+      "id": 6,
+      "name": "F"
+    },
+    {
+      "id": 7,
+      "name": "G"
+    },
+    {
+      "id": 8,
+      "name": "H"
+    },
+    {
+      "id": 9,
+      "name": "I"
+    },
+    {
+      "id": 10,
+      "name": "J"
+    }
+  ],
+  "links": [
+    {
+      "source": 1,
+      "target": 2
+    },
+    {
+      "source": 1,
+      "target": 3
+    },
+    {
+      "source": 1,
+      "target": 4
+    },
+    {
+      "source": 2,
+      "target": 5
+    },
+    {
+      "source": 2,
+      "target": 6
+    },
+    {
+      "source": 3,
+      "target": 7
+    },
+    {
+      "source": 2,
+      "target": 8
+    },
+    {
+      "source": 3,
+      "target": 9
+    },
+    {
+      "source": 3,
+      "target": 10
+    },
+    {
+      "source": 4,
+      "target": 10
+    }
+  ]
+}

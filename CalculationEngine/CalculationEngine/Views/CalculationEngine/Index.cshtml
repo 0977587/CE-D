@@ -1,0 +1,626 @@
+﻿@{
+
+    Layout = null;
+}
+
+<style>
+    body {
+        
+        background: #334f7c;
+        
+    }
+
+    .t1 {
+        max-width: 75%;
+        max-height: 80%;
+        width: auto;
+        height: auto;
+        float: left;
+    }
+
+    .t2 {
+        max-width: 25%;
+        max-height: 80%;
+        width: auto;
+        height: auto;
+        float: left;
+    }
+
+    #styledtable {
+        background-color: #20324e;
+        border-collapse: collapse;
+        margin: 5%;
+        font-size: 0.9em;
+        font-family: sans-serif;
+        min-width: 400px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+        color:#FFFFFF;
+    }
+
+    #styledtable thead tr {
+        font-family: sans-serif;
+        background-color: #c8d4e8;
+        text-align: left;
+        font-size: 20px;
+
+    }
+
+    #styledtable th {
+        padding: 12px 15px;
+        border: solid 1px #777;
+        padding: 5px;
+        background: #20324e;
+    }
+
+ 
+    #styledtable td {
+        padding: 12px 15px;
+    }
+    
+  
+
+
+    
+</style>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CE-D</title>
+</head>
+<body>
+    <div class="content">
+        <div class=t1 id="graph"></div>
+        <div class=t2 id="informationBox"></div>
+    </div>
+</body>
+</html>
+
+<script type="text/jsx">
+
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    const useForceUpdate = () => {
+        const setToggle = useState(false)[1];
+        return () => setToggle(b => !b);
+    };
+
+    const format = expression => {
+    var change = [], result = expression.replace(/ /g, "").replace(/\*\*/g, "^"), _count;
+    function replace(index, string){result = result.slice(0, index) + string + result.slice(index + 1)}
+    function add(index, string){result = result.slice(0, index) + string + result.slice(index)}
+    for (var count = 0; count < result.length; count++){
+        if (result[count] == "-"){
+            if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890)".includes(result[count - 1])){
+                change.push(count);
+            }else if (result[count - 1] != "("){
+                add(count, "(");
+                count++;
+                _count = count + 1;
+                while ("1234567890.".includes(result[_count])) _count++;
+                if (_count < result.length - 1){
+                    add(_count, ")");
+                }else{
+                    add(_count + 2, ")");
+                }
+            }
+        }
+    }
+    change = change.sort(function(a, b){return a - b});
+    const len = change.length;
+    for (var count = 0; count < len; count++){replace(change[0] + count * 2, " - "); change.shift()}
+    return result.replace(/\*/g, " * ").replace(/\^/g, " ** ").replace(/\//g, " / ").replace(/\+/g, " + ");
+    }
+
+    const trim = expression => {
+            var result = format(expression).replace(/ /g, "").replace(/\*\*/g, "^"), deleting = [];
+            const brackets = bracket_pairs(result);
+            function bracket_pairs(){
+                function findcbracket(str, pos){
+                    const rExp = /\(|\)/g;
+                    rExp.lastIndex = pos + 1;
+                    var depth = 1;
+                    while ((pos = rExp.exec(str))) if (!(depth += str[pos.index] == "(" ? 1 : -1 )) {return pos.index}
+                }
+                function occurences(searchStr, str){
+                    var startIndex = 0, index, indices = [];
+                    while ((index = str.indexOf(searchStr, startIndex)) > -1){
+                        indices.push(index);
+                        startIndex = index + 1;
+                    }
+                    return indices;
+                }
+                const obrackets = occurences("(", result);
+                var cbrackets = [];
+                for (var count = 0; count < obrackets.length; count++) cbrackets.push(findcbracket(result, obrackets[count]));
+                return obrackets.map((e, i) => [e, cbrackets[i]]);
+            }
+
+            function remove(deleting){
+                function _remove(index){result = result.slice(0, index) + result.slice(index + 1)}
+                const len = deleting.length;
+                var deleting = deleting.sort(function(a, b){return a - b});
+                for (var count = 0; count < len; count++){
+                    _remove(deleting[0] - count);
+                    deleting.shift()
+                }
+            }
+
+            function precedence(operator, position){
+                if (!"^/*-+".includes(operator)) return "^/*-+";
+                if (position == "l" || position == "w") return {"^": "^", "/": "^", "*": "^/*", "-": "^/*", "+": "^/*-+"}[operator];
+                if (position == "r") return {"^": "^", "/": "^/*", "*": "^/*", "-": "^/*-+", "+": "^/*-+"}[operator];
+            }
+
+            function strip_bracket(string){
+                var result = "", level = 0;
+                for (var count = 0; count < string.length; count++){
+                    if (string.charAt(count) == "(") level++;
+                    if (level == 0) result += string.charAt(count);
+                    if (string.charAt(count) == ")") level--;
+                }
+                return result.replace(/\s{2,}/g, " ");
+            }
+            for (var count = 0; count < brackets.length; count++){
+                const pair = brackets[count];
+                if (result[pair[0] - 1] == "(" && result[pair[1] + 1] == ")"){
+                    deleting.push(...pair);
+                }else{
+                    const left = precedence(result[pair[0] - 1], "l"), right = precedence(result[pair[1] + 1], "r");
+                    var contents = strip_bracket(result.slice(pair[0] + 1, pair[1])), within = "+";
+                    for (var _count = 0; _count < contents.length; _count++) if (precedence(contents[_count], "w").length < precedence(within, "w").length) within = contents[_count];
+                    if (/^[0-9]+$/g.test(contents) || contents == ""){
+                        deleting.push(...pair);
+                        continue;
+                    }
+                    if (left.includes(within) && right.includes(within)){
+                        if (!isNaN(result.slice(pair[0] + 1, pair[1]))){
+                            if (Number(result.slice(pair[0] + 1, pair[1])) >= 0 && !"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".includes(result[pair[0] - 1])) deleting.push(...pair);
+                        }else if (!"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".includes(result[pair[0] - 1])) deleting.push(...pair);
+                    }
+                }
+            }
+            remove(deleting);
+            result = format(result);
+            return result;
+    }
+    function parse(str) {
+      return Function(`'use strict'; return (${str})`)()
+    }
+
+
+    function Nodeinfo({matchedNode}) {
+        if(matchedNode.expressionString !=null){
+            // do the test strings contain these terms?
+            const conditions = ["+", "-", "*", "^","%"];
+            const containsOperations = conditions.some(el => matchedNode.expressionString.includes(el));
+            if(containsOperations){
+                matchedNode.expressionString = trim(matchedNode.expressionString);
+                matchedNode.Value = parse(matchedNode.expressionString);
+            }
+        }
+        return (
+            <table id="styledtable" >
+                <thead>
+                    <tr>
+                        <th> Informatie scherm</th>
+                    </tr>
+                </thead>
+                <tr>
+                    <th> Naam</th>
+                </tr>
+                 <tr>
+                    <td> {matchedNode.name}</td>
+                </tr>
+                <tr>
+                  <th> Beschrijving</th>
+                </tr>
+                <tr>
+                  <td> {matchedNode.Description}</td>
+                </tr>
+                 <tr>
+                  <th> uitdrukking</th>
+                </tr>
+                <tr>
+                  <td> { matchedNode.expressionString != matchedNode.Value ? matchedNode.expressionString : ""}</td>
+                </tr>
+                <tr>
+                  <td> {matchedNode.Value}</td>
+                </tr>
+                <tr>
+                  <th> Condities</th>
+                </tr>
+                <tr>
+                  <td>
+                    {matchedNode.Rules.map((rule, index) => (
+                        <div key={index}>Name: {rule.name}
+                          <div>rulecondition: {rule.rulecondition.name}</div>
+                          <div>&emsp;body: {rule.rulecondition.body}</div>
+                          <div>ruleaction: {rule.ruleaction.event}</div>
+                          <div>&emsp;action: {rule.ruleaction.body}</div>
+                          <hr />
+                        </div>
+                      ))}
+                  </td>
+                </tr>
+
+                <tr>
+                  <th> Dependencies</th>
+                </tr>
+                <tr>
+                    <td>
+                        {matchedNode.Dependencies.map(dependency => (<div>{dependency}</div>))}
+                    </td>
+                </tr>
+
+            </table>
+        );
+    };
+
+    const ForceTree = ({ data }) => {
+        const fgRef = useRef();
+        const [controls] = useState({ 'DAG Orientatie': 'td'});
+        const [linkDistanceControl,setlinkDistanceControl] = useState({ 'DaglevelDistance': 80});
+        const forceUpdate = useForceUpdate();
+        const [check, setCheck] = useState(false);
+        const [ScaleK, setScaleK] = useState(0);
+        const [ClickedNodes, setClickedNodes] = useState(new Set());
+        const [ColorNodes, setColorNodes] = useState(new Set());
+
+
+        const [cooldownTicks, setCooldownTicks] = useState(undefined);
+        const [NodeLevel, setNodeLevel] = useState(0);
+        const [highlightNodes, setHighlightNodes] = useState(new Set());
+        const [highlightLinks, setHighlightLinks] = useState(new Set());
+        const [hoverNode, setHoverNode] = useState(null);
+        const [showPopup, setshowPopup] = useState(false);
+
+        useEffect(() => {
+        // add controls GUI
+            const gui = new dat.GUI();
+            gui.add(controls, 'DAG Orientatie', ['td', 'lr'])
+            .onChange(forceUpdate);
+        }, []);
+
+         useEffect(() => {
+            
+            if(!check){
+                let node = nodes.find(element => element.parent === "");
+                if ( node != undefined){
+                    const distance = 40;
+                    const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+                    fgRef.current.d3Force("collide", d3.forceCollide().radius(d => d.r = getbiggestRadius(nodes)+2));
+                    
+                    setScaleK(1);
+                }
+                setCheck(check => !check);
+            }
+        }, [fgRef]);
+
+
+        const updateHighlight = () => {
+            setHighlightNodes(highlightNodes);
+            setHighlightLinks(highlightLinks);
+        };
+
+        const handleNodeHover = node => {
+            highlightNodes.clear();
+            highlightLinks.clear();
+            if (node) {
+                highlightNodes.add(node);
+                node.neighbours.forEach(neighbour => highlightNodes.add(neighbour));
+                node.links.forEach(link => highlightLinks.add(link));
+            }
+
+        setHoverNode(node || null);
+        updateHighlight();
+        };
+
+        const handleLinkHover = link => {
+            highlightNodes.clear();
+            highlightLinks.clear();
+
+            if (link) {
+              highlightLinks.add(link);
+              highlightNodes.add(link.source);
+              highlightNodes.add(link.target);
+            }
+
+            updateHighlight();
+        };
+
+       const handleClick = useCallback(node => {
+           
+            if(node.level != NodeLevel){
+                setNodeLevel(node.level);   
+                fgRef.current.d3Force("collide", d3.forceCollide().radius(d => d.r = getbiggestRadius(nodes)+5));
+            } 
+            fgRef.current.centerAt(node.x, node.y, 1000);
+            fgRef.current.zoom(2 +node.level/4, 2000);
+            fetch("../CalculationEngine/GetNode/?Path=" + node.leaf )
+                .then(res => res.json()).then(data => {
+                ReactDOM.render(<Nodeinfo matchedNode={data} />,document.getElementById('informationBox'));
+            });
+        }, [fgRef]);
+
+        function isTooDark(r,g,b){
+            var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
+            return luma < 20;
+        }
+
+        function getDarkColor() {
+            var color = '#';
+            var r = '';
+            var g = '';
+            var b = '';
+            for (var i = 0; i < 2; i++) {
+                r += Math.floor(Math.random() * 10);
+                g += Math.floor(Math.random() * 10);
+                b += Math.floor(Math.random() * 10);
+            }
+            if(isTooDark(color)){
+                getDarkColor();
+            }
+            return color+r+g+b;
+        }
+
+        function nodePaint(node, ctx,globalScale) {
+            // add rect just for  nodes
+            const bckgDimensions = node.__bckgDimensions;
+
+            if (node.color == null && node.module ==null ){
+                node.color = getDarkColor();
+                while(ColorNodes.has(node.color)){
+                   node.color = getDarkColor();
+                }
+                ColorNodes.add(node.color);
+            }
+            else if(node.module != null){
+                let sourceNode = nodes.find(element => element.leaf === node.module);
+                node.color = sourceNode.color;
+                if(!ColorNodes.has(node.color)){
+                    node.color = getDarkColor();
+                    while(ColorNodes.has(node.color)){
+                    node.color = getDarkColor();
+                    }
+                    ColorNodes.add(node.color);
+                }
+            }
+            ctx.fillStyle = node.color;
+            bckgDimensions && ctx.fillRect(node.x - (bckgDimensions[0]) / 2, node.y - (bckgDimensions[1]) / 2, ...bckgDimensions);
+        }
+
+        const paintRing = useCallback((node, ctx,globalScale) => {
+            if(highlightNodes.has(node)){
+            const bckgDimensions = node.__bckgDimensions;
+            const newNumbers = bckgDimensions.map(function increment(number) {
+                return (number )*1.1;
+            });
+            ctx.fillStyle = node === hoverNode ? 'red' : 'orange';
+            bckgDimensions && ctx.fillRect(node.x - newNumbers[0] / 2, node.y - newNumbers[1] / 2, ...newNumbers);
+            ctx.fill();
+            }
+        }, [hoverNode]);
+
+        function paintText({ id, x, y,level,color,leaf }, ctx,globalScale) {
+            // add rect just for  nodes
+            ctx.beginPath();
+            const fontSize = 8-globalScale;
+            ctx.fillStyle = ' #FFFFFF';
+            ctx.font = '${fontSize}px Sans-Serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(leaf, x, y);  // text
+            ctx.closePath();
+        }
+
+
+        function getAllIndexes(arr, val) {
+            var indexes = [], i;
+            for(i = 0; i < arr.length; i++)
+                if (arr[i].leaf === val)
+                    indexes.push(arr[i]);
+            return indexes;
+        }
+
+        function calculateCircumference(radius) {
+            return Math.PI * (radius + radius);
+        }
+
+        function getRadius(node) {
+            const bckgDimensions = node.__bckgDimensions;
+            const newNumbers = bckgDimensions.map(function increment(number) {
+                    return number *1.1;
+            });
+            return newNumbers[0]/2;
+        }
+        function getbiggestRadius(nodes){
+             let biggest = Number.MIN_VALUE;
+             nodes.forEach(node => {
+                const bckgDimensions = node.__bckgDimensions;
+                if((bckgDimensions[0])/2 > biggest){
+                    biggest = (bckgDimensions[0]-node.level)/2;
+                }
+            });
+            return biggest;
+        }
+        // gen a number persistent color from around the palette
+        const getColor = n => '#' + ((n * 1234567) % Math.pow(2, 24)).toString(16).padStart(6, '0');
+            
+        const zoomed = useCallback((coords)=> {
+            let newDagLevelDistance = 120-(coords.k*20);
+            if(coords.k < 2){
+                var x = controls['DAG Orientatie'];
+                if(x == 'td'){
+                    newDagLevelDistance = 150-(coords.k*30);
+                    setlinkDistanceControl({ 'DagLeveldistance': newDagLevelDistance > 80 ?  newDagLevelDistance : 80   });
+                }
+                else{
+                    newDagLevelDistance = 240-(coords.k*30);
+                    setlinkDistanceControl({ 'DagLeveldistance': newDagLevelDistance > 200 ?  newDagLevelDistance : 200   });
+                }
+            }
+            else {
+                setlinkDistanceControl({ 'DagLeveldistance': newDagLevelDistance > 40 ?  newDagLevelDistance : 40   });
+            }
+            setScaleK(coords.k);
+        }, [fgRef]);
+
+     
+    
+
+    
+
+        return <ForceGraph2D
+        ref={fgRef}
+        graphData={data}
+        width={window.screen.width - (0.3*window.screen.width)}
+        height={window.screen.height - (0.1*window.screen.height)}
+        backgroundColor="#101020"
+        dagMode={controls['DAG Orientatie']}
+        dagLevelDistance={linkDistanceControl['DagLeveldistance']}
+        linkColor={() => 'rgba(255,255,255,0.2)'}
+        nodeRelSize={2}
+        nodeId="path"
+        nodeVal={node => 100 / (node.level + 1)}
+        nodeLabel="path"
+        nodeAutoColorBy="module"
+        linkDirectionalParticleWidth={2}
+        d3VelocityDecay={0.5}
+        autoPauseRedraw={false}
+        linkDirectionalParticles={4}
+        linkWidth={link => highlightLinks.has(link) ? 6 : 2}
+        linkDirectionalParticleWidth={link => highlightLinks.has(link) ? 6 : 1}
+        nodeCanvasObjectMode={(node => 'replace')}
+        nodeCanvasObject={(node, ctx,globalScale) => {
+            const label = node.leaf;
+            const fontSize = 12/globalScale;
+            ctx.font = `${fontSize}px Sans-Serif`;
+            const textWidth = ctx.measureText(label).width;
+            const bckgDimensions = [textWidth, fontSize].map(n => n + fontSize *4); // some padding
+            node.__bckgDimensions = bckgDimensions;
+
+            paintRing(node, ctx,globalScale);
+            nodePaint(node, ctx,globalScale);
+            paintText(node, ctx,globalScale);
+        }}
+         nodePointerAreaPaint={(node, color, ctx,globalScale) => {
+            ctx.fillStyle = color;
+            const bckgDimensions = node.__bckgDimensions;
+            bckgDimensions && ctx.fillRect(globalScale+(node.x - bckgDimensions[0] / 2), (node.y - bckgDimensions[1] / 2), ...bckgDimensions);
+        }}
+        linkCanvasObjectMode={(link => 'after')}
+        linkCanvasObject={(link, ctx,globalScale) => {
+           link.width =link.width
+           link.color = 'rgba(255,255,255,0.2)'
+          
+        }}@*
+        onZoomEnd={zoomedEnd}*@
+        onZoom={(k, x, y) => {zoomed(k,x,y)}}
+        zoomToFit= {(0,10)}
+        d3Force={("alphaTarget",0.03)}
+        d3Force={("charge", d3.forceManyBody().strength((d, i) => i ? 0 : -(0.7*window.screen.width) * 2 / 3))}
+        enableZoomInteraction ={true}
+        minZoom= {1}	
+        maxZoom = {8}	
+        d3VelocityDecay= {0.3}        
+        onNodeHover={handleNodeHover}
+        onLinkHover={handleLinkHover}
+        onEngineStop={() => {setCooldownTicks(0);}}
+        onNodeClick={handleClick}
+        onDagError={(error) => console.log(error)}
+        />;
+    };
+
+    const nodes = [], links = [];
+    fetch("../CalculationEngine/GetData")
+    .then(res => res.json()).then(data => {
+            data.forEach((path ) => {
+            const levels = path.split('/'),
+                level = levels.length ,
+                module = level > 0 ? levels[1] : null,
+                leaf = levels.pop(),
+                parent = levels.join('/');   
+            const node = {
+                path,
+                leaf,
+                module,
+                size: 20,
+                level,
+                neighbours: [],
+                links:[],
+                parent
+            };
+
+            let sourceNode = nodes.find(element => element.leaf === leaf);
+            if ( sourceNode != undefined){
+                if (sourceNode.parent != null &&  sourceNode.parent.length > 0) {
+                   links.push({source: parent, target: sourceNode.parent+'/'+sourceNode.leaf, targetNode: sourceNode});
+                }
+            }
+            else {
+                if (node.parent != null &&  node.parent.length > 0) {
+                    const levels2 = parent.split('/'),
+                    level2 = levels2.length ,
+                    module2 = level2 > 0 ? levels2[1] : null,
+                    leaf2 = levels2.pop(),
+                    parent2 = levels2.join('/');
+                    let sourceNode2 = nodes.find(element => element.leaf === leaf2);
+                    if ( sourceNode2 != undefined && parent != sourceNode2.leaf ){
+                        node.path  = sourceNode2.path+'/'+ leaf;
+                        node.module  = sourceNode2.module;
+                        nodes.push(node);
+                        links.push({source: sourceNode2.path, target: node.path, targetNode: sourceNode2});
+                    }
+                    else{
+                        links.push({source: parent, target: path, targetNode: node});
+                        nodes.push(node);
+                    }
+                   
+                } 
+                else{
+                       nodes.push(node);
+                }
+            }  
+        });
+        links.forEach(link => {
+            const levels = link.source.split('/'),
+            leaf = levels.pop(),
+            levels2 = link.target.split('/'),
+            leaf2 = levels2.pop();
+            const a = nodes.find(element => element.leaf === leaf);
+            const b = nodes.find(element => element.leaf === leaf2);
+            !a.neighbours && (a.neighbours = []);
+            !b.neighbours && (b.neighbours = []);
+            a.neighbours.push(b);
+            b.neighbours.push(a);
+
+            !a.links && (a.links = []);
+            !b.links && (b.links = []);
+            a.links.push(link);
+            b.links.push(link);
+        });
+        ReactDOM.render(
+        <ForceTree data={{ nodes, links }} />,
+        document.getElementById('graph')
+        );
+    });
+</script>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.3.2/react.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.3.2/react-dom.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/remarkable/1.7.1/remarkable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prop-types/15.6.0/prop-types.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jssor-slider/28.0.0/jssor.slider.min.js"></script>
+<script src="//unpkg.com/react/umd/react.production.min.js"></script>
+<script src="//unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+<script src="//unpkg.com/babel-standalone"></script>
+<script src="//unpkg.com/d3"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+<script src="//unpkg.com/react-force-graph-2d"></script>
+<script src="//unpkg.com/3d-force-graph"></script>

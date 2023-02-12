@@ -1,0 +1,172 @@
+{
+	"DataChanged": false,
+
+	"rules": [{
+			"name": "rule1",
+			"rulecondition": {
+				"name": "leftisgreaterthanorequalto",
+				"body": "20"
+			},
+			"ruleaction": {
+				"event": "THEN",
+				"body": "[A, 3, ADD]"
+			}
+		},
+		{
+			"name": "rule2",
+			"rulecondition": {
+				"name": "isgreaterthanorequalto",
+				"body": "3"
+			},
+			"ruleaction": {
+				"event": "THEN",
+				"body": "[B, 1,SUB]"
+			}
+		}
+	],
+	"facts": [{
+			"id": 1,
+			"rulenames": ["rule1"],
+			"operators":["add","mul","sub","sub"]
+		},
+		{
+			"id": 2,
+			"rulenames": ["rule2"],
+			"operators":["add"]
+		},
+		{
+			"id": 3,
+			"rulenames": [],
+			"operators":["add"]
+		},
+		{
+			"id": 4,
+			"value": 500,
+			"rulenames": []
+		},
+		{
+			"id": 5,
+			"value": 120,
+			"rulenames": []
+		},
+		{
+			"id": 6,
+			"value": 140,
+			"rulenames": []
+
+		},
+		{
+			"id": 7,
+			"value": 150,
+			"rulenames": []
+
+		},
+		{
+			"id": 8,
+			"value": 130,
+			"rulenames": []
+		}
+	],
+	"nodes": [{
+			"id": 1,
+			"name": "Totale Lening"
+		},
+		{
+			"id": 2,
+			"name": "Basisbeurs"
+		},
+		{
+			"id": 3,
+			"name": "Aanvullende beurs"
+		},
+		{
+			"id": 4,
+			"name": "Lening van overheid"
+		},
+		{
+			"id": 5,
+			"name": "Studentenreisproduct"
+		},
+		{
+			"id": 6,
+			"name": "Collegeldkrediet"
+		},
+		{
+			"id": 7,
+			"name": "VerdienstenVader"
+		},
+		{
+			"id": 8,
+			"name": "VerdienstenMoeder"
+		}
+	],
+	"links": [{
+			"source": 1,
+			"target": 2
+		},
+		{
+			"source": 1,
+			"target": 3
+		},
+
+		{
+			"source": 2,
+			"target": 3
+		},
+
+		{
+			"source": 1,
+			"target": 4
+		},
+		{
+			"source": 1,
+			"target": 5
+		},
+		{
+			"source": 1,
+			"target": 6
+		},
+		{
+			"source": 3,
+			"target": 7
+		},
+		{
+			"source": 3,
+			"target": 8
+		}
+	],
+
+	"descriptions": [{
+			"id": 1,
+			"body": "Dit is de huidige som van een lening. die bestaat uit: basisbeurs (alleen voor mbo), aanvullende beurs, lening van de overheid, studentenreisproduct en collegeldkrediet"
+		},
+		{
+			"id": 2,
+			"body": "Dit is de basisbeurs. De basisbeurs is 1 van de inkomstenbronnen voor studenten om in hun levensonderhoud te voorzien"
+		},
+		{
+			"id": 3,
+			"body": " De aanvullende beurs is onderdeel van studiefinanciering"
+		},
+		{
+			"id": 4,
+			"body": "Als u een lening afsluit, moet u het bedrag met rente terugbetalen"
+		},
+		{
+			"id": 5,
+			"body": "Met het studentenreisproduct kunt u vrij of met korting reizen met de trein, tram, bus en metro in heel Nederland."
+		},
+		{
+			"id": 6,
+			"body": "Doet u hbo of universiteit? Dan kunt u extra lenen om uw collegegeld te betalen. Dit noemen we 'collegegeldkrediet'."
+		},
+		{
+			"id": 7,
+			"body": "Verdienste van de vader"
+		},
+		{
+			"id": 8,
+			"body": "Verdienste van de Moeder"
+		}
+	]
+}
